@@ -354,7 +354,10 @@ function checkCookies()
 		// }
 
 		// Copy dictionary back to session storage
-		sessionStorage.setItem('taperCookieStorage', JSON.stringify(cookieDict));
+		if (cookieDict.length > 0)
+		{
+			sessionStorage.setItem('taperCookieStorage', JSON.stringify(cookieDict));
+		}
 
 		// Ship it
 		request = new XMLHttpRequest();
@@ -439,7 +442,7 @@ function checkSessionStorage()
 
 		if (key === "taperSessionStorage")
 		{
-			// Should skip over our won session storage
+			// Should skip over our won session storage copy
 			continue;
 		}
 
@@ -472,10 +475,10 @@ function checkSessionStorage()
 		// {
 			// New localStorage entry
 			// console.log("++ New sessionStorage: " + key + ", with value: " + value);
-		if (value != null)
-		{
-			sessionStorageDict[key] = value;
-		}
+		// if (value != null)
+		// {
+		sessionStorageDict[key] = value;
+		// }
 		// }
 
 		// Copy dictionary back to session storage
